@@ -1,9 +1,7 @@
 import flet as ft
 import sqlite3
 
-# --- Настройка базы данных ---
 def init_db():
-    # check_same_thread=False нужен, так как Flet может обращаться к БД из разных потоков
     conn = sqlite3.connect("employees.db", check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
@@ -21,22 +19,18 @@ def main(page: ft.Page):
     page.title = "Учет сотрудников"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 20
-    page.scroll = ft.ScrollMode.ADAPTIVE # Включаем прокрутку страницы
+    page.scroll = ft.ScrollMode.ADAPTIVE 
 
-    # Подключаемся к БД
     conn = init_db()
 
-    # --- Элементы интерфейса: Добавление ---
     name_input = ft.TextField(label="ФИО", width=250)
     position_input = ft.TextField(label="Должность", width=200)
     dept_input = ft.TextField(label="Отдел", width=200)
 
-    # --- Элементы интерфейса: Поиск и Сортировка ---
-    # При изменении текста в поиске или выборе сортировки сразу обновляем таблицу
     search_input = ft.TextField(
         label="Поиск по ФИО", 
         width=300, 
-        prefix_icon="search", # Убрали ft.icons. и поставили кавычки
+        prefix_icon="search",
         on_change=lambda e: update_table()
     )
     
@@ -50,10 +44,8 @@ def main(page: ft.Page):
         ],
         value="name"
     )
-    # Назначаем обработчик события отдельной строкой:
     sort_dropdown.on_change = lambda e: update_table()
 
-    # --- Элементы интерфейса: Таблица ---
     employees_table = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("ID")),
@@ -64,27 +56,21 @@ def main(page: ft.Page):
         rows=[]
     )
 
-    # --- Функции ---
     def update_table():
         """Обновляет данные в таблице с учетом поиска и сортировки"""
         search_query = search_input.value
         sort_by = sort_dropdown.value
 
-        # Защита от SQL-инъекций для ORDER BY (используем белый список)
         valid_sort_columns = {"name", "position", "department"}
         if sort_by not in valid_sort_columns:
             sort_by = "name"
 
         cursor = conn.cursor()
-        # Ищем совпадения по имени (LIKE) и сортируем по выбранной колонке
         query = f"SELECT * FROM employees WHERE name LIKE ? ORDER BY {sort_by}"
         cursor.execute(query, (f'%{search_query}%',))
         rows = cursor.fetchall()
 
-        # Очищаем текущие строки таблицы
         employees_table.rows.clear()
-        
-        # Заполняем таблицу новыми данными
         for row in rows:
             employees_table.rows.append(
                 ft.DataRow(
@@ -100,7 +86,6 @@ def main(page: ft.Page):
 
     def add_employee(e):
         """Добавляет сотрудника в БД и обновляет интерфейс"""
-        # Проверка на пустые поля
         if not name_input.value or not position_input.value or not dept_input.value:
             page.snack_bar = ft.SnackBar(ft.Text("Пожалуйста, заполните все поля!"))
             page.snack_bar.open = True
@@ -114,17 +99,14 @@ def main(page: ft.Page):
         )
         conn.commit()
 
-        # Очищаем поля ввода
         name_input.value = ""
         position_input.value = ""
         dept_input.value = ""
         
-        # Обновляем таблицу, чтобы показать новую запись
         update_table()
 
     add_btn = ft.ElevatedButton("Добавить сотрудника", icon="add", on_click=add_employee)
 
-    # --- Сборка интерфейса на странице ---
     page.add(
         ft.Text("Регистрация нового сотрудника", size=20, weight=ft.FontWeight.BOLD),
         ft.Row([name_input, position_input, dept_input, add_btn], wrap=True),
@@ -136,8 +118,6 @@ def main(page: ft.Page):
         employees_table
     )
 
-    # Загружаем данные при первом запуске
     update_table()
 
-# Запуск приложения
 ft.run(main)
