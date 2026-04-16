@@ -8,14 +8,11 @@ class UI:
         self.round = ft.Text("Выстрел: 0/6", size=16)
         self.lives = ft.Text("Жизни: ❤️❤️❤️", size=20)
 
-       # Изображение револьвера
         self.drum = ft.Image(
             src="gun.png",
             width=150,
             height=150,
             rotate=ft.Rotate(0, alignment=ft.Alignment(0, 0)),
-            # БЫЛО: animate_rotation=ft.animation.Animation(500, ft.AnimationCurve.EASE_OUT)
-            # СТАЛО (убрали .animation):
             animate_rotation=ft.Animation(500, ft.AnimationCurve.EASE_OUT)
         )
 
