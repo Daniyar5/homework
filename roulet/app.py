@@ -14,7 +14,7 @@ class RouletteApp:
         self.page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         
         # 2. МЕНЯЕМ ft.Audio НА fta.Audio
-        self.shoot_sound = fta.Audio(src="https://actions.google.com/sounds/v1/weapons/gunshot.ogg", autoplay=False)
+        self.shoot_sound = fta.Audio(src="shoot.mp3", autoplay=False)
         self.page.overlay.append(self.shoot_sound)
 
         # Настраиваем игру: 3 жизни, 2 пули
@@ -59,7 +59,7 @@ class RouletteApp:
 
         if result == "boom":
             self.shoot_sound.play() # Проигрываем звук
-            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/1082/1082984.png" # Меняем на картинку взрыва
+            self.ui.drum.src = "blast.png" # Меняем на картинку взрыва
             self.ui.status.value = "🧨 БАМ! Минус жизнь"
             self.ui.status.color = "red"
             self.update_lives_ui()
@@ -67,7 +67,7 @@ class RouletteApp:
             if not self.game.alive:
                 self.show_dialog("Игра окончена 🎈", "У вас закончились жизни!")
         else:
-            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+            self.ui.drum.src = "gun.png"
             self.ui.status.value = "😅 Повезло!"
             self.ui.status.color = 'green'
         
@@ -78,7 +78,7 @@ class RouletteApp:
         # Если в нас попали, но мы живы - возвращаем картинку револьвера через секунду
         if result == "boom" and self.game.alive:
             await asyncio.sleep(1.2)
-            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+            self.ui.drum.src = "gun.png"
             self.page.update()
     
     def restart(self, e):
@@ -87,7 +87,7 @@ class RouletteApp:
         self.ui.status.value ="Нажми на кнопку выстрел"
         self.ui.status.color = "black"
         self.ui.round.value ="Камора: 1/6"
-        self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+        self.ui.drum.src = "gun.png"
         
         # Сброс угла поворота барабана
         self.ui.drum.rotate.angle = 0
