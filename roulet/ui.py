@@ -5,15 +5,13 @@ class UI:
         self.title = ft.Text("Русская рулетка", size=26, weight="bold")
         self.status = ft.Text("Нажми выстрел", size=20)
         self.round = ft.Text("Раунд: 1")
-        self.lives = ft.Text("❤️❤️❤️", size=24) # Индикатор жизней
+        self.lives = ft.Text("❤️❤️❤️", size=24)
 
-        # Заменяем Text на Image для барабана/оружия
         self.drum = ft.Image(
             src="https://img.icons8.com/color/256/revolver.png",
             width=150,
             height=150,
             fit=ft.ImageFit.CONTAIN,
-            # Настраиваем точку вращения по центру
             rotate=ft.transform.Rotate(0, alignment=ft.alignment.center) 
         )
 
