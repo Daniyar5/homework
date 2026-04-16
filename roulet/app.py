@@ -71,7 +71,7 @@ class RouletteApp:
             self.ui.status.value = "😅 Повезло!"
             self.ui.status.color = 'green'
         
-        self.ui.round.value = f'Камора: {self.game.current_position - 1}/6'
+        self.ui.round.value = f'Выстрел: {self.game.current_position - 1}/6'
         self.ui.shoot_btn.disabled = False
         self.page.update()
 

@@ -5,4 +5,4 @@ def main(page: ft.Page):
     RouletteApp(page)
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.run(main, assets_dir="assets")
