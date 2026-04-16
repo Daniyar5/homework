@@ -12,7 +12,6 @@ class Game:
         self.reload_cylinder()
 
     def reload_cylinder(self):
-        # Генерируем уникальные позиции для пуль (например, 2 пули в 6 каморах)
         self.bullet_positions = random.sample(range(1, 7), self.bullets_count)
         self.current_position = 1
 
@@ -20,7 +19,6 @@ class Game:
         if not self.alive:
             return "game over"
         
-        # Если текущая камора содержит пулю
         if self.current_position in self.bullet_positions:
             self.lives -= 1
             if self.lives <= 0:
