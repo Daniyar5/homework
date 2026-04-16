@@ -1,5 +1,7 @@
 import flet as ft
+import flet_audio as fta # <--- 1. ДОБАВЛЯЕМ НОВЫЙ ИМПОРТ
 import asyncio
+import math
 from game import Game
 from ui import UI
 
@@ -7,16 +9,17 @@ class RouletteApp:
     def __init__(self, page: ft.Page):
         self.page = page
         self.page.title = 'Русская рулетка'
-        self.page.window_width = 400
-        self.page.window_height = 650
+        self.page.window_width = 500
+        self.page.window_height = 600
         self.page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         
-        self.game = Game(lives=3, bullets=2)
-        self.ui = UI()
+        # 2. МЕНЯЕМ ft.Audio НА fta.Audio
+        self.shoot_sound = fta.Audio(src="https://actions.google.com/sounds/v1/weapons/gunshot.ogg", autoplay=False)
+        self.page.overlay.append(self.shoot_sound)
 
-        self.shot_sound = ft.Audio(src="https://actions.google.com/sounds/v1/weapons/gunshot.ogg", autoplay=False)
-        self.empty_sound = ft.Audio(src="https://actions.google.com/sounds/v1/tools/ratchet_wrench.ogg", autoplay=False)
-        self.page.overlay.extend([self.shot_sound, self.empty_sound])
+        # Настраиваем игру: 3 жизни, 2 пули
+        self.game = Game(lives=3, bullets_count=2)
+        self.ui = UI()
 
         self.bind_events()
         self.page.add(*self.ui.build())
@@ -25,62 +28,71 @@ class RouletteApp:
     def bind_events(self):
         self.ui.shoot_btn.on_click = self.shoot
         self.ui.reset_btn.on_click = self.restart
-
-    def update_lives_ui(self):
-        self.ui.lives.value = "❤️" * self.game.lives + "🖤" * (self.game.max_lives - self.game.lives)
-        self.page.update()
     
-    async def animate_drum(self):
-        self.ui.shoot_btn.disabled = True
-        self.ui.drum.src = "https://img.icons8.com/color/256/revolver.png"
-        self.page.update()
+    def update_lives_ui(self):
+        # Рисуем полные и пустые сердца в зависимости от количества жизней
+        hearts = "❤️" * self.game.lives
+        lost_hearts = "🖤" * (self.game.max_lives - self.game.lives)
+        self.ui.lives.value = f"Жизни: {hearts}{lost_hearts}"
 
-        for i in range(1, 15):
-            self.ui.drum.rotate.angle = i * 0.5
-            self.page.update()
-            await asyncio.sleep(0.04)
-        
-        self.ui.drum.rotate.angle = 0
+    async def animate_drum(self):
+        # Плавная анимация: прибавляем 360 градусов (2 Пи)
+        self.ui.drum.rotate.angle += math.pi * 2
+        self.page.update()
+        await asyncio.sleep(0.5) # Ждем пока проиграется анимация
     
     async def shoot(self, e):
+        # Проверки перед выстрелом
         if not self.game.alive:
             return
-            
+        if self.game.current_position > 6:
+            self.ui.status.value = "Барабан пуст! Жми перезарядку."
+            self.ui.status.color = "black"
+            self.page.update()
+            return
+
+        self.ui.shoot_btn.disabled = True # Блокируем кнопку, чтобы не кликали дважды
+        self.page.update()
+
         await self.animate_drum()
         result = self.game.shot()
 
-        if result == "fatal_boom":
-            self.shot_sound.play()
-            self.ui.drum.src = "https://img.icons8.com/color/256/skull.png"
-            self.ui.status.value ="🧨 BOOM! ИГРА ОКОНЧЕНА"
+        if result == "boom":
+            self.shoot_sound.play() # Проигрываем звук
+            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/1082/1082984.png" # Меняем на картинку взрыва
+            self.ui.status.value = "🧨 БАМ! Минус жизнь"
             self.ui.status.color = "red"
-            self.show_dialog("Конец игры 🎈", "Вы потеряли все жизни!")
-        elif result == "boom":
-            self.shot_sound.play()
-            self.ui.drum.src = "https://img.icons8.com/color/256/explosion.png"
-            self.ui.status.value = "💥 Попадание! Минус жизнь."
-            self.ui.status.color = "orange"
-            self.ui.shoot_btn.disabled = False
-        else:
-            self.empty_sound.play()
-            self.ui.status.value = "😅 Повезло! Холостой."
-            self.ui.status.color = 'green'
-            self.ui.shoot_btn.disabled = False
+            self.update_lives_ui()
 
-        self.update_lives_ui()
-        self.ui.round.value = f'Раунд: {self.game.current_position}'
+            if not self.game.alive:
+                self.show_dialog("Игра окончена 🎈", "У вас закончились жизни!")
+        else:
+            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+            self.ui.status.value = "😅 Повезло!"
+            self.ui.status.color = 'green'
+        
+        self.ui.round.value = f'Камора: {self.game.current_position - 1}/6'
+        self.ui.shoot_btn.disabled = False
         self.page.update()
+
+        # Если в нас попали, но мы живы - возвращаем картинку револьвера через секунду
+        if result == "boom" and self.game.alive:
+            await asyncio.sleep(1.2)
+            self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+            self.page.update()
     
     def restart(self, e):
         self.game.reset()
-        self.ui.status.value ="Нажми на кнопку выстрел"
-        self.ui.status.color = "white"
-        self.ui.round.value ="Раунд: 1"
-        self.ui.drum.src = "https://img.icons8.com/color/256/revolver.png"
-        self.ui.shoot_btn.disabled = False
         self.update_lives_ui()
+        self.ui.status.value ="Нажми на кнопку выстрел"
+        self.ui.status.color = "black"
+        self.ui.round.value ="Камора: 1/6"
+        self.ui.drum.src = "https://cdn-icons-png.flaticon.com/512/2213/2213885.png"
+        
+        # Сброс угла поворота барабана
+        self.ui.drum.rotate.angle = 0
         self.page.update()
-    
+
     def show_dialog(self, title, message):
         dlg = ft.AlertDialog(
             title=ft.Text(title),
@@ -95,4 +107,5 @@ class RouletteApp:
     
     def close_dialog(self):
         self.page.dialog.open = False
+        self.restart(None) # Автоматически перезапускаем после закрытия диалога
         self.page.update()
