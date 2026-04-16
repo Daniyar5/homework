@@ -1,5 +1,5 @@
 import flet as ft
-import flet_audio as fta # <--- 1. ДОБАВЛЯЕМ НОВЫЙ ИМПОРТ
+import flet_audio as fta
 import asyncio
 import math
 from game import Game
@@ -13,11 +13,9 @@ class RouletteApp:
         self.page.window_height = 600
         self.page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         
-        # 2. МЕНЯЕМ ft.Audio НА fta.Audio
         self.shoot_sound = fta.Audio(src="shoot.mp3", autoplay=False)
         self.page.overlay.append(self.shoot_sound)
 
-        # Настраиваем игру: 3 жизни, 2 пули
         self.game = Game(lives=3, bullets_count=2)
         self.ui = UI()
 
@@ -30,19 +28,16 @@ class RouletteApp:
         self.ui.reset_btn.on_click = self.restart
     
     def update_lives_ui(self):
-        # Рисуем полные и пустые сердца в зависимости от количества жизней
         hearts = "❤️" * self.game.lives
         lost_hearts = "🖤" * (self.game.max_lives - self.game.lives)
         self.ui.lives.value = f"Жизни: {hearts}{lost_hearts}"
 
     async def animate_drum(self):
-        # Плавная анимация: прибавляем 360 градусов (2 Пи)
         self.ui.drum.rotate.angle += math.pi * 2
         self.page.update()
-        await asyncio.sleep(0.5) # Ждем пока проиграется анимация
+        await asyncio.sleep(0.5)
     
     async def shoot(self, e):
-        # Проверки перед выстрелом
         if not self.game.alive:
             return
         if self.game.current_position > 6:
@@ -51,15 +46,15 @@ class RouletteApp:
             self.page.update()
             return
 
-        self.ui.shoot_btn.disabled = True # Блокируем кнопку, чтобы не кликали дважды
+        self.ui.shoot_btn.disabled = True
         self.page.update()
 
         await self.animate_drum()
         result = self.game.shot()
 
         if result == "boom":
-            self.shoot_sound.play() # Проигрываем звук
-            self.ui.drum.src = "blast.png" # Меняем на картинку взрыва
+            self.shoot_sound.play()
+            self.ui.drum.src = "blast.png"
             self.ui.status.value = "🧨 БАМ! Минус жизнь"
             self.ui.status.color = "red"
             self.update_lives_ui()
@@ -75,7 +70,6 @@ class RouletteApp:
         self.ui.shoot_btn.disabled = False
         self.page.update()
 
-        # Если в нас попали, но мы живы - возвращаем картинку револьвера через секунду
         if result == "boom" and self.game.alive:
             await asyncio.sleep(1.2)
             self.ui.drum.src = "gun.png"
@@ -89,7 +83,6 @@ class RouletteApp:
         self.ui.round.value ="Камора: 1/6"
         self.ui.drum.src = "gun.png"
         
-        # Сброс угла поворота барабана
         self.ui.drum.rotate.angle = 0
         self.page.update()
 
@@ -107,5 +100,5 @@ class RouletteApp:
     
     def close_dialog(self):
         self.page.dialog.open = False
-        self.restart(None) # Автоматически перезапускаем после закрытия диалога
+        self.restart(None)
         self.page.update()
